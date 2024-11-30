@@ -1,0 +1,111 @@
+#include <Adafruit_LiquidCrystal.h>
+#include <Keypad.h>
+
+const byte ROWS = 4;
+const byte COLS = 4;
+
+char keys[ROWS][COLS] = {
+  {'1', '2', '3', '+'},
+  {'4', '5', '6', '-'},
+  {'7', '8', '9', 'C'},
+  {'*', '0', '=', '/'}
+};
+
+byte rowPins[ROWS] = {4, 5, 6, 7};
+byte colPins[COLS] = {0, 1, 2, 3};
+Keypad ourKeypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
+
+// Initialize LCD
+Adafruit_LiquidCrystal lcd(0);
+
+// Define variables
+bool firstNumState = true;
+String firstNum = "";
+String secondNum = "";
+float answer = 0.0;
+char oper = ' ';
+
+void setup() {
+  // Turn on the LCD
+  lcd.begin(16, 2);
+  lcd.setBacklight(LOW);
+  lcd.setCursor(0, 0);
+  lcd.print("Calculatrice");
+  lcd.setCursor(0, 1);
+  lcd.print("wiwimima");
+  delay(1500);
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("start");
+  delay(1500);
+  lcd.clear();
+}
+void loop() {
+  char newKey = ourKeypad.getKey();
+
+  // Handle number key press
+  if (newKey != NO_KEY && isDigit(newKey)) {
+    if (firstNumState) {
+      firstNum += newKey;
+      lcd.print(newKey);
+    } else {
+      secondNum += newKey;
+      lcd.print(newKey);
+    }
+  }
+  // Handle operator key press
+  if (newKey != NO_KEY && (newKey == '+' || newKey == '-' || newKey == '*' || newKey == '/')) {
+    if (firstNumState) {
+      oper = newKey;
+      firstNumState = false;
+      lcd.print(oper);
+    }
+  }
+  // Handle '=' key press
+  if (newKey != NO_KEY && newKey == '=') {
+    if (!firstNumState) {
+      if (oper == '+') {
+        answer = firstNum.toFloat() + secondNum.toFloat();
+      } else if (oper == '-') {
+        answer = firstNum.toFloat() - secondNum.toFloat();
+      } else if (oper == '*') {
+        answer = firstNum.toFloat() * secondNum.toFloat();
+      } else if (oper == '/') {
+        //division par 0  imposible
+        if (secondNum.toFloat() == 0) {
+          lcd.clear();
+          lcd.print("Impossible");
+          delay(1500);
+          lcd.clear();
+          firstNum = "";
+          secondNum = "";
+          answer = 0;
+          oper = ' ';
+          firstNumState = true;
+          return; 
+        } else {
+        answer = firstNum.toFloat() / secondNum.toFloat();
+        }
+      }
+      lcd.setCursor(0, 0);
+      lcd.print(firstNum);
+      lcd.print(oper);
+      lcd.print(secondNum);
+      lcd.setCursor(0, 1);
+      lcd.print("=");
+      lcd.print(answer);
+      firstNumState = true;
+    }
+  }
+  // 'c'pour effacer
+  if (newKey != NO_KEY && newKey == 'C') {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    firstNum = "";
+    secondNum = "";
+    answer = 0;
+    oper = ' ';
+    firstNumState = true;
+  }
+  
+}
